@@ -3,7 +3,13 @@ package run;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.Queue;
 import java.util.Scanner;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingDeque;
+
+import message.Message;
 
 public class Server {
   static ArrayList<String> servers = new ArrayList<String>();
@@ -26,9 +32,26 @@ public class Server {
       servers.add(str);
       System.out.println("address for server " + i + ": " + servers.get(i));
     }
-  
+    BlockingQueue<Message> receiveBuffer=new LinkedBlockingDeque<Message>();
+    BlockingQueue<Message> sendBuffer=new LinkedBlockingDeque<Message>();
+    Thread t=new Thread(new MessageReceiveThread(servers.get(0),receiveBuffer));
+    t.start();
+
+    Thread t2=new Thread(new MessageSendThread(sendBuffer,servers.get(0)));
+    t2.start();
     while (true) {
-      break;
+      //if(!q.take()){
+      Message m=new Message("a");
+      sendBuffer.add(m);
+      sendBuffer.add(m);
+      sendBuffer.add(m);
+        try {
+          System.out.println("Received Content: "+receiveBuffer.take().getContent());
+        } catch (InterruptedException e) {
+          // TODO Auto-generated catch block
+          e.printStackTrace();
+        }
+      //}
     }
     // TODO: start server socket to communicate with clients and other servers
     
