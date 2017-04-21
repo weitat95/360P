@@ -1,0 +1,4 @@
+*.class
+.metadata/
+.README.md.un~
+README.md~
