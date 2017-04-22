@@ -20,14 +20,15 @@ public class MessageReceiveHandler implements Runnable{
   public void run() {
     ObjectInputStream ois;
     PrintWriter pout;
-    while(true){
       try {
         ois=new ObjectInputStream(s.getInputStream());
         pout=new PrintWriter(s.getOutputStream());
-        q.add((Message) ois.readObject());
-        pout.println("Acknowledge");
-        pout.flush();
-      } catch (IOException e) {
+        while(true){
+          q.add((Message) ois.readObject());
+          pout.println("Acknowledge");
+          pout.flush();
+        } 
+      }catch (IOException e) {
         // TODO Auto-generated catch block
         e.printStackTrace();
       } catch (ClassNotFoundException e) {
@@ -37,5 +38,4 @@ public class MessageReceiveHandler implements Runnable{
       
     }
     
-  }
 }

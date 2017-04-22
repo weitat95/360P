@@ -2,6 +2,10 @@ package run;
 
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Queue;
@@ -12,7 +16,19 @@ import java.util.concurrent.LinkedBlockingDeque;
 import message.Message;
 
 public class Server {
-  static ArrayList<String> servers = new ArrayList<String>();
+  String[] ServerIp;
+  int[] ServerPort;
+  int myID;
+  int numServer;
+  Store store;
+  
+  public Server(int myID,int numServer,String inventoryPath,String[] ServerIp,int[] ServerPort){
+    this.myID=myID;
+    this.numServer=numServer;
+    this.store=new Store(inventoryPath);
+    this.ServerIp=ServerIp;
+    this.ServerPort=ServerPort;
+  }
   public static void main (String[] args) {
     
     Scanner sc = null;
@@ -23,36 +39,83 @@ public class Server {
     }
     int myID = sc.nextInt();
     int numServer = sc.nextInt();
+    String[] ServerIp=new String[numServer];
+    int[] ServerPort=new int[numServer];
     String inventoryPath = sc.next();
     System.out.println("[DEBUG] my id: " + myID);
     System.out.println("[DEBUG] numServer: " + numServer);
     System.out.println("[DEBUG] inventory path: " + inventoryPath);
     for (int i = 0; i < numServer; i++) {
       String str = sc.next(); //change back to sc once done
-      servers.add(str);
-      System.out.println("address for server " + i + ": " + servers.get(i));
+      Scanner token = new Scanner(str);
+      token.useDelimiter(":");
+      ServerIp[i]=token.next();
+      ServerPort[i]=Integer.parseInt(token.next());
+      token.close();
+      System.out.println("address for server " + i + ": " + str);
     }
+    Server server=new Server(myID,numServer,inventoryPath,ServerIp,ServerPort);
+    
+    ServerSocket listener;
+    Socket s=null;
+    try{
+      listener=new ServerSocket(ServerPort[myID-1]);
+      while(true){
+        
+        while((s=listener.accept())!=null){
+          Scanner scin=new Scanner(s.getInputStream());
+          PrintWriter pout=new PrintWriter(s.getOutputStream());
+          String receivedMsg=scin.nextLine();
+          String[] tags=receivedMsg.split(" ");
+          if(tags[0].equals("connect")){
+            pout.println("Server Ready");
+            pout.flush();
+            Thread clientH = new Thread(new ServerClientHandler(s,server));
+            clientH.start();
+          }
+        }
+      }
+    }catch (IOException e){
+      e.printStackTrace();
+    }
+    /*
+    
+    //Smallest Server ID be the leader, Starting at 1;
+    
+    //Leader starts connection to other server;
     BlockingQueue<Message> receiveBuffer=new LinkedBlockingDeque<Message>();
-    BlockingQueue<Message> sendBuffer=new LinkedBlockingDeque<Message>();
-    Thread t=new Thread(new MessageReceiveThread(servers.get(0),receiveBuffer));
-    t.start();
+    ArrayList<BlockingQueue<Message>> sendBuffers=new ArrayList<BlockingQueue<Message>>();
+    if(myID==1){
+      for(int i=0;i<numServer-1;i++){
+        sendBuffers.add(new LinkedBlockingDeque<Message>());
+        Thread t= new Thread(new MessageSendThread(sendBuffers.get(i),servers.get(i+1)));
+        t.start();
+      }
+      Thread t=new Thread(new MessageReceiveThread(servers.get(0),receiveBuffer));
+      t.start();
+    }else{
+      
+    }
 
     Thread t2=new Thread(new MessageSendThread(sendBuffer,servers.get(0)));
     t2.start();
+    BlockingQueue<Message> sendBuffer2=new LinkedBlockingDeque<Message>();
+
+    Thread t3=new Thread(new MessageSendThread(sendBuffer2,servers.get(0)));
+    t3.start();
     while (true) {
       //if(!q.take()){
       Message m=new Message("a");
       sendBuffer.add(m);
-      sendBuffer.add(m);
-      sendBuffer.add(m);
+      sendBuffer2.add(new Message("b"));
         try {
           System.out.println("Received Content: "+receiveBuffer.take().getContent());
         } catch (InterruptedException e) {
-          // TODO Auto-generated catch block
           e.printStackTrace();
         }
       //}
     }
+    */
     // TODO: start server socket to communicate with clients and other servers
     
     // TODO: parse the inventory file

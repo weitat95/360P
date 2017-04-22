@@ -1,96 +1,180 @@
 package run;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.net.SocketAddress;
-import java.net.SocketException;
 import java.net.SocketTimeoutException;
-import java.util.ArrayList;
 import java.util.Scanner;
 
 public class Client {
-	static ArrayList<String> servers = new ArrayList<String>();
-  public static void main (String[] args) {
-	Socket server;
-    Scanner sc = new Scanner(System.in);
-    int numServer = sc.nextInt();
-    
-    for (int i = 0; i < numServer; i++) {
-      // TODO: parse inputs to get the ips and ports of servers
-    	String str = sc.next();
-    	System.out.println("address for server " + i + ": " + str);
-    	servers.add(str);
+  int numServer;
+  String[] ServerIp;
+  int[] ServerPort;
+  Scanner din;
+  PrintStream pout;
+  Socket server;
+  int connectedServerID;
+  public Client(int numServer,String[] serverIp,int[] serverPort){
+    this.numServer=numServer;
+    this.ServerIp=serverIp;
+    this.ServerPort=serverPort;
+  }
+  
+  public void connectServer(){
+    for(int i=0;i<numServer;i++){
+      server = new Socket();
+      try {
+//        System.out.println("[DEBUG]: Initiating Connection to server "+(i+1));
+        server.connect(new InetSocketAddress(ServerIp[i],ServerPort[i]),100);
+        din = new Scanner(server.getInputStream());
+        pout = new PrintStream(server.getOutputStream());
+        pout.println("connect");
+        pout.flush();
+        server.setSoTimeout(100);
+        if(din.nextLine().equals("Server Ready")){
+          System.out.println("[DEBUG]: Connected to Server "+(i+1));
+          connectedServerID=i;
+          break;
+        }
+        
+        
+      }catch (SocketTimeoutException ste){
+//        System.out.println("[DEBUG] TIMEOUT Connecting Server: "+(i+1));
+        if(i==numServer-1){
+          connectServer(-1);
+        }
+      } catch (IOException e) {
+        e.printStackTrace();
+      }
     }
+  }
+  public void connectServer(int lastConnected){
+    for(int i=lastConnected+1;i<numServer;i++){
+      server = new Socket();
+      try {
+//        System.out.println("[DEBUG]: Initiating Connection to server "+(i+1));
+        server.connect(new InetSocketAddress(ServerIp[i],ServerPort[i]),100);
+        din = new Scanner(server.getInputStream());
+        pout = new PrintStream(server.getOutputStream());
+        pout.println("connect");
+        pout.flush();
+        server.setSoTimeout(100);
+        if(din.nextLine().equals("Server "+(i+1)+": Ready")){
+//          System.out.println("[DEBUG]: Connected to Server "+(i+1));
+          connectedServerID=i;
+          break;
+        }
+        
+        
+      }catch (SocketTimeoutException ste){
+//        System.out.println("[DEBUG] TIMEOUT Connecting Server: "+(i+1));
+        if(i==numServer-1){
+          connectServer(-1);
+        }
+      } catch (IOException e) {
+        e.printStackTrace();
+      }
+    }
+  }
+  public void sendRequest(String command){
+
+    pout.println(command);
+    pout.flush();
+    String msg;
+    try {
+      server.setSoTimeout(100);
+      server.getInputStream().read();
+      server.setSoTimeout(0);
+      server.getInputStream().read();
+      while(!(msg=din.nextLine()).equals("|ENDMSG|")){
+        System.out.println(msg); // prints server's message
+      }
+    } catch(SocketTimeoutException ste ){
+//      System.out.println("[DEBUG] TIMEOUT sending Request to Server");
+
+    }catch (IOException e) {
+      // TODO Auto-generated catch block
+      try {
+        server.close();
+      } catch (IOException e1) {
+        // TODO Auto-generated catch block
+        e1.printStackTrace();
+      }
+      connectServer(connectedServerID);
+      sendRequest(command);
+    }
+   
+  }
     
-    while(sc.hasNextLine()) {
-      String cmd = sc.nextLine();
-      System.out.println(cmd);
-      String[] tokens = cmd.split(" ");
-      String messageresponse = "";
-      if (tokens[0].equals("purchase") || tokens[0].equals("cancel") || tokens[0].equals("search") || tokens[0].equals("list")) {
+    
+  
+	public static void main (String[] args) {
+	  //Scanner sc = new Scanner(System.in);
+	  
+	  //REMOVE FOR SUBMISSION
+	  Scanner sc = null;
+    try {
+      sc = new Scanner(new FileReader("Paxos/client2.cfg"));
+    } catch (FileNotFoundException e) {
+      e.printStackTrace();
+    }
+    //END
+      
+     
+		int numServer = sc.nextInt();
+		String[] ServerIp=new String[numServer];
+		int[] ServerPort=new int[numServer];
+		for (int i = 0; i < numServer; i++) {
+		  String str = sc.next(); 
+      Scanner token = new Scanner(str);
+      token.useDelimiter(":");
+      ServerIp[i]=token.next();
+      ServerPort[i]=Integer.parseInt(token.next());
+      token.close();
+      System.out.println("address for server " + i + ": " + str);
+		}
+		Client client=new Client(numServer,ServerIp,ServerPort);
+		
+		
+		client.connectServer();
+    sc = new Scanner(System.in);
+
+		while(sc.hasNextLine()) {
+		  String cmd = sc.nextLine();
+		  String[] tokens = cmd.split(" ");
+//		  System.out.println("[DEBUGG]"+cmd);
+      if (tokens[0].equals("purchase")) {
         // TODO: send appropriate command to the server and display the
         // appropriate responses form the server
-    	  boolean serviced = false;
-    	  while(!serviced){ //****** If server times out, execution returns to this while loop after catch block is finished executing, right?
-        	  server = obtainSocket();
-              //try{
-            	//  server.setSoTimeout(100);//set read timeout to 100ms
-              //}catch(SocketException e){
-            	//  System.err.println(e);
-              //}
-	    	  try{
-		    	  Scanner din = new Scanner (server.getInputStream());
-				  PrintStream pout = new PrintStream(server.getOutputStream());
-				  pout.println(cmd);
-				  pout.flush();
-				  //System.out.println("waiting for response");
-				  while(din.hasNextLine()){
-					  String response;
-					  if((response = din.nextLine()).equals("end")){
-						  serviced = true;
-						  server.close();
-						  System.out.println(messageresponse);
-						  break;
-					  }
-					  if(response.equals("received")){
-						  //System.out.println(response);
-					  }
-					  if(!response.equals("")){
-						  if(!messageresponse.contains("received")){
-							  messageresponse = messageresponse + "\n" + response;
-						  }else{
-							  messageresponse = response;
-						  }
-					  }
-					  //System.out.println(response);
-				  }
-				  
-	    	  }catch(IOException e){//server has crashed/timed out, connect to new server and service request
-	    		  System.err.println(e);
-	    		  server = obtainSocket();
-	    	  }
-    	  }
+        String userName = tokens[1];
+        String productName = tokens[2];
+        int quantity = Integer.parseInt(tokens[3]);
+        String toSend="purchase " + userName + " " + productName + " " + quantity;
+        client.sendRequest(toSend);
+      } else if (tokens[0].equals("cancel")) {
+        // TODO: send appropriate command to the server and display the
+        // appropriate responses form the server
+        int orderID = Integer.parseInt(tokens[1]);
+        String toSend="cancel " + orderID;
+        client.sendRequest(toSend);
+      } else if (tokens[0].equals("search")) {
+        // TODO: send appropriate command to the server and display the
+        // appropriate responses form the server
+        String userName = tokens[1];
+        String toSend="search " + userName;
+        client.sendRequest(toSend);
+        
+      } else if (tokens[0].equals("list")) {
+        // TODO: send appropriate command to the server and display the
+        // appropriate responses form the server
+        String toSend="list";
+        client.sendRequest(toSend);
+        
       } else {
         System.out.println("ERROR: No such command");
       }
     }
-  }
-  
-  public static Socket obtainSocket(){
-	  int index = 0;
-	  while(true){//if all servers crash, this loop is continuous. Per instructions, client loops through addresses until connection is established
-		  Socket server = new Socket();
-		  String[] serverComponents = servers.get(index).split(":");
-		  SocketAddress sockaddr = new InetSocketAddress(serverComponents[0], Integer.parseInt(serverComponents[1]));
-		  try{
-			  server.connect(sockaddr, 100);
-			  //System.out.println("obtained connection to server " + (index+1));
-			  return server;
-		  }catch(IOException e){ // maybe just need to catch SocketTimeoutException
-			  index = ((index + 1) % servers.size());
-			  //System.out.println("connection failed. cycling");
-		  }
-	  }
   }
 }
