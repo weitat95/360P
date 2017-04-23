@@ -17,7 +17,7 @@ public class Proposer extends PaxosRole{
   
   public void startProposal(){
     System.out.println("Starting Prepare State");
-    Message prepare=new ProposeMessage(myID,sequence,paxosInstance);
+    Message prepare=new ProposeMessage(myID,seq,paxosInstance);
     for(int i=0;i<servers.size();i++){
       if(i!=myID-1){
         Thread t=new Thread(new MessageSendThread(prepare,servers.get(i)));

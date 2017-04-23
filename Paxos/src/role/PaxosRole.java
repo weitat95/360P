@@ -8,7 +8,6 @@ import message.Message;
 
 public class PaxosRole {
   int paxosInstance;
-  int sequence;
   String command;
   ArrayList<String> servers;
   int myID;
