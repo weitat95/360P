@@ -2,11 +2,14 @@ package run;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.io.PrintStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.util.Scanner;
+
+import message.Message;
 
 public class Client {
   int numServer;
@@ -16,6 +19,8 @@ public class Client {
   PrintStream pout;
   Socket server;
   int connectedServerID;
+  ObjectOutputStream oos;
+
   public Client(int numServer,String[] serverIp,int[] serverPort){
     this.numServer=numServer;
     this.ServerIp=serverIp;
@@ -29,11 +34,12 @@ public class Client {
 //        System.out.println("[DEBUG]: Initiating Connection to server "+(i+1));
         server.connect(new InetSocketAddress(ServerIp[i],ServerPort[i]),100);
         din = new Scanner(server.getInputStream());
-        pout = new PrintStream(server.getOutputStream());
-        pout.println("connect");
-        pout.flush();
+        oos = new ObjectOutputStream(server.getOutputStream());
+        Message m=new Message("connect");
+        oos.writeObject(m);
+        oos.flush();
         server.setSoTimeout(100);
-        if(din.nextLine().equals("Server Ready")){
+        if(din.nextLine().equals("Acknowledge")){
           System.out.println("[DEBUG]: Connected to Server "+(i+1));
           connectedServerID=i;
           break;
@@ -57,11 +63,14 @@ public class Client {
 //        System.out.println("[DEBUG]: Initiating Connection to server "+(i+1));
         server.connect(new InetSocketAddress(ServerIp[i],ServerPort[i]),100);
         din = new Scanner(server.getInputStream());
-        pout = new PrintStream(server.getOutputStream());
-        pout.println("connect");
-        pout.flush();
+        oos = new ObjectOutputStream(server.getOutputStream());
+        Message m=new Message("connect");
+        oos.writeObject(m);
+        oos.flush();
+        //pout.println("connect");
+        //pout.flush();
         server.setSoTimeout(100);
-        if(din.nextLine().equals("Server "+(i+1)+": Ready")){
+        if(din.nextLine().equals("Acknowledge")){
 //          System.out.println("[DEBUG]: Connected to Server "+(i+1));
           connectedServerID=i;
           break;
@@ -79,6 +88,12 @@ public class Client {
     }
   }
   public void sendRequest(String command){
+    try {
+      pout = new PrintStream(server.getOutputStream());
+    } catch (IOException e2) {
+      // TODO Auto-generated catch block
+      e2.printStackTrace();
+    }
 
     pout.println(command);
     pout.flush();
@@ -116,7 +131,7 @@ public class Client {
 	  //REMOVE FOR SUBMISSION
 	  Scanner sc = null;
     try {
-      sc = new Scanner(new FileReader("Paxos/client2.cfg"));
+      sc = new Scanner(new FileReader("Paxos/client.cfg"));
     } catch (FileNotFoundException e) {
       e.printStackTrace();
     }

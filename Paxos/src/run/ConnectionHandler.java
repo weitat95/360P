@@ -15,14 +15,14 @@ public class ConnectionHandler {
     this.server=serverIPPort;
   }
   public void startSender(){
-    Thread t=new Thread(new MessageSendThread(sendBuffer,server));
-    t.start();
+   // Thread t=new Thread(new MessageSendThread(sendBuffer,server));
+   // t.start();
   }
   public void sendMessage(Message m){
     sendBuffer.add(m);
   }
   public void startReceiver(){
-    Thread t=new Thread(new MessageReceiveThread(server,receiveBuffer));
-    t.start();
+   // Thread t=new Thread(new MessageReceiveThread(server,receiveBuffer));
+   // t.start();
   }
 }

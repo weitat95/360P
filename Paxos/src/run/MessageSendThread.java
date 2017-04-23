@@ -15,15 +15,14 @@ public class MessageSendThread implements Runnable{
   private Socket s;
   private Message m;
   private InetSocketAddress inet;
-  BlockingQueue<Message> q;
-  public MessageSendThread(BlockingQueue<Message> q,String server){
-    assert(s!=null&&q!=null);
+  public MessageSendThread(Message m,String server){
+    assert(s!=null&&m!=null);
     Scanner token = new Scanner(server);
     token.useDelimiter(":");
     inet=new InetSocketAddress(token.next(),token.nextInt());
     assert(inet!=null);
     token.close();
-    this.q=q;
+    this.m=m;
   }
   @Override
   public void run() {
@@ -32,25 +31,20 @@ public class MessageSendThread implements Runnable{
       ObjectOutputStream oos;
       s=new Socket();
       try {
-        System.out.println("Connecting: "+inet.getPort()+inet.getHostString());
+        System.out.println("Connecting: "+inet.getPort()+" "+inet.getHostString());
         s.connect(inet);
         sin = new Scanner(s.getInputStream());
-        pout = new PrintStream(s.getOutputStream());
+        //pout = new PrintStream(s.getOutputStream());
         oos = new ObjectOutputStream(s.getOutputStream());
-        while(true){
-          Message m=q.take();
-          oos.writeObject(m);
-          oos.flush();
+        oos.writeObject(m);
+        oos.flush();
           
-          System.out.println("Sent Message: "+m.getContent());
-          if(sin.nextLine().equals("Acknowledge")){
-         //   s.close();
-            System.out.println("Received Acknowledgement");
-          }
-        }
+        System.out.println("Sent Message: "+m.getContent());
+        if(sin.nextLine().equals("Acknowledge")){
+          s.close();
+          //System.out.println("Received Acknowledgement");
+        }  
       } catch (IOException e) {
-        e.printStackTrace();
-      } catch (InterruptedException e){
         e.printStackTrace();
       }
     

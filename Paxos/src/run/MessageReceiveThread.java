@@ -10,18 +10,23 @@ import java.util.Queue;
 import java.util.Scanner;
 import java.util.concurrent.BlockingQueue;
 
+import role.Acceptor;
 import message.Message;
+import message.PromiseAgreeMessage;
+import message.ProposeMessage;
 
 public class MessageReceiveThread implements Runnable{
   Integer port;
-  BlockingQueue<Message> q;
-  public MessageReceiveThread(String server,BlockingQueue<Message> q){
-    assert(server!=null && q!=null);
-    this.q=q;
-    Scanner token = new Scanner(server);
+
+  Server server;
+  public MessageReceiveThread(String serverIPPort,Server server){
+    assert(serverIPPort!=null&&server!=null);
+    this.server=server;
+    Scanner token = new Scanner(serverIPPort);
     token.useDelimiter(":");
     token.next();
     port=token.nextInt();
+    token.close();
     assert(port!=null);
   }
   @Override
@@ -29,31 +34,47 @@ public class MessageReceiveThread implements Runnable{
     ServerSocket listernerSocket;
     ObjectInputStream ois;
     PrintWriter pout;
-    while(true){
       try {
         listernerSocket = new ServerSocket(port);
         Socket s = null;
-        while((s=listernerSocket.accept())!=null){
-          Thread t=new Thread(new MessageReceiveHandler(s,q));
-          t.start();
-          /*
-          ois = new ObjectInputStream(s.getInputStream());
-          pout = new PrintWriter(s.getOutputStream());
-          q.add((Message) ois.readObject());
-          //System.out.println(q.poll().getContent());
-          pout.println("Acknowledge");
-          pout.flush();
-          */
-          //s.close();
+        while(true){
+
+          while((s=listernerSocket.accept())!=null){
+            
+            ois = new ObjectInputStream(s.getInputStream());
+            pout = new PrintWriter(s.getOutputStream());
+            Message m=(Message) ois.readObject();
+            String message=m.getContent();
+            //System.out.println("Received message: "+message);
+            
+            String[] tags=message.split(" ");
+            if(tags[0].equals("connect")){
+              System.out.println("Client connected!");
+              Thread clientH=new Thread(new ServerClientHandler(s,server));
+              clientH.start();
+            }else if(m instanceof ProposeMessage){
+              ProposeMessage pm=(ProposeMessage) m;
+              System.out.println(pm.toString());
+              int seq=pm.getSeq();
+              Acceptor acceptor=new Acceptor(server.myID, pm.getInstance(),seq, server.servers,server.receivedSeq,server.command);
+
+            }else if(m instanceof PromiseAgreeMessage){
+              PromiseAgreeMessage pam=(PromiseAgreeMessage) m;
+              System.out.println(pam.toString());
+              //Continue here
+              //debug promiseagreemessage not sending
+            }
+            pout.println("Acknowledge");
+            pout.flush();
+            
+            //s.close();
+          }
         }
-        
-      } catch (IOException e) {
-        // TODO Auto-generated catch block
-        e.printStackTrace();
-      //} catch (ClassNotFoundException e) {
+      } 
+      catch (IOException | ClassNotFoundException e) {
         // TODO Auto-generated catch block
         e.printStackTrace();
       }
     }
-  }
+  
 }

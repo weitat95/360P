@@ -4,17 +4,18 @@ import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.Scanner;
 
+import message.Message;
+import role.Proposer;
+
 
 public class ServerClientHandler implements Runnable{
   Socket s;
   Scanner cin;
   PrintWriter pout;
-  Store store;
   Server server;
   public ServerClientHandler(Socket s,Server server){
     this.s=s;
     this.server=server;
-    this.store=server.store;
     try {
       cin=new Scanner(s.getInputStream());
       pout=new PrintWriter(s.getOutputStream());
@@ -54,12 +55,17 @@ public class ServerClientHandler implements Runnable{
     while(cin.hasNextLine()){
       String command = cin.nextLine();
       System.out.println("Server received: "+command);
-      pout.println("A");
-      pout.flush();
+      //Check if you are a leader (for now id smallest be the leader)
+      if(server.myID==1){
+        System.out.println("Starting proposal with instance:" +server.instanceNum.get()+" seq Num: "+server.sequenceNum.get());
+        Proposer proposer=new Proposer(server.myID,server.instanceNum.get(),server.sequenceNum.incrementAndGet(),server.servers);
+        server.instanceNum.incrementAndGet();
+      }
 //     
       pout.println(executeCommand(command,server.store));
       pout.println("|ENDMSG|");
       pout.flush();
+
     }
   }
 }

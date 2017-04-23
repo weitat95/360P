@@ -12,22 +12,31 @@ import java.util.Queue;
 import java.util.Scanner;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import message.Message;
 
 public class Server {
-  String[] ServerIp;
-  int[] ServerPort;
+  //String[] ServerIp;
+  //int[] ServerPort;
   int myID;
   int numServer;
+  ArrayList<String> servers;
   Store store;
-  
-  public Server(int myID,int numServer,String inventoryPath,String[] ServerIp,int[] ServerPort){
+  AtomicInteger instanceNum;
+  AtomicInteger sequenceNum;
+  AtomicInteger receivedSeq;
+  String command;
+  public Server(int myID,int numServer,String inventoryPath,ArrayList<String> servers){
     this.myID=myID;
     this.numServer=numServer;
     this.store=new Store(inventoryPath);
-    this.ServerIp=ServerIp;
-    this.ServerPort=ServerPort;
+    //this.ServerIp=ServerIp;
+    //this.ServerPort=ServerPort;
+    this.servers=servers;
+    this.instanceNum=new AtomicInteger();
+    this.sequenceNum=new AtomicInteger();
+    this.receivedSeq=new AtomicInteger();
   }
   public static void main (String[] args) {
     
@@ -39,23 +48,28 @@ public class Server {
     }
     int myID = sc.nextInt();
     int numServer = sc.nextInt();
-    String[] ServerIp=new String[numServer];
-    int[] ServerPort=new int[numServer];
+    //String[] ServerIp=new String[numServer];
+    //int[] ServerPort=new int[numServer];
+    ArrayList<String> servers=new ArrayList<String>();
     String inventoryPath = sc.next();
     System.out.println("[DEBUG] my id: " + myID);
     System.out.println("[DEBUG] numServer: " + numServer);
     System.out.println("[DEBUG] inventory path: " + inventoryPath);
     for (int i = 0; i < numServer; i++) {
       String str = sc.next(); //change back to sc once done
-      Scanner token = new Scanner(str);
-      token.useDelimiter(":");
-      ServerIp[i]=token.next();
-      ServerPort[i]=Integer.parseInt(token.next());
-      token.close();
+      servers.add(str);
+      //Scanner token = new Scanner(str);
+      //token.useDelimiter(":");
+      //ServerIp[i]=token.next();
+      //ServerPort[i]=Integer.parseInt(token.next());
+      //token.close();
       System.out.println("address for server " + i + ": " + str);
     }
-    Server server=new Server(myID,numServer,inventoryPath,ServerIp,ServerPort);
-    
+    Server server=new Server(myID,numServer,inventoryPath,servers);
+    Thread t=new Thread(new MessageReceiveThread(servers.get(myID-1),server));
+    t.start();
+
+    /*
     ServerSocket listener;
     Socket s=null;
     try{
@@ -72,13 +86,15 @@ public class Server {
             pout.flush();
             Thread clientH = new Thread(new ServerClientHandler(s,server));
             clientH.start();
+          }else{
+            
           }
         }
       }
     }catch (IOException e){
       e.printStackTrace();
     }
-    /*
+    
     
     //Smallest Server ID be the leader, Starting at 1;
     
