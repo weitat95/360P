@@ -19,4 +19,16 @@ public class Message implements java.io.Serializable{
   public String getContent(){
     return content;
   }
+  public int getInstance(){
+    return instance;
+  }
+  public int getID(){
+    return myID;
+  }
+  public int getSeq(){
+    return seq;
+  }
+  public String toString(){
+    return content;
+  }
 }

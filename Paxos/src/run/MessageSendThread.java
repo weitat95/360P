@@ -31,7 +31,7 @@ public class MessageSendThread implements Runnable{
       ObjectOutputStream oos;
       s=new Socket();
       try {
-        System.out.println("Connecting: "+inet.getPort()+" "+inet.getHostString());
+        //System.out.println("Connecting: "+inet.getPort()+" "+inet.getHostString());
         s.connect(inet);
         sin = new Scanner(s.getInputStream());
         //pout = new PrintStream(s.getOutputStream());
@@ -39,7 +39,7 @@ public class MessageSendThread implements Runnable{
         oos.writeObject(m);
         oos.flush();
           
-        System.out.println("Sent Message: "+m.getContent());
+        //System.out.println("Sent Message: "+m.toString());
         if(sin.nextLine().equals("Acknowledge")){
           s.close();
           //System.out.println("Received Acknowledgement");

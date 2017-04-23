@@ -7,6 +7,7 @@ import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Queue;
 import java.util.Scanner;
@@ -27,6 +28,9 @@ public class Server {
   AtomicInteger sequenceNum;
   AtomicInteger receivedSeq;
   String command;
+  Integer promiseCounter;
+  HashMap<Integer,String> instanceCommandMap;
+  LinkedList<String> commands;
   public Server(int myID,int numServer,String inventoryPath,ArrayList<String> servers){
     this.myID=myID;
     this.numServer=numServer;
@@ -37,6 +41,14 @@ public class Server {
     this.instanceNum=new AtomicInteger();
     this.sequenceNum=new AtomicInteger();
     this.receivedSeq=new AtomicInteger();
+    this.promiseCounter=0;
+    this.instanceCommandMap=new HashMap<Integer,String>();
+    this.commands=new LinkedList<String>();
+  }
+  
+  public synchronized int incrementPromise(Integer instanceNum){
+    promiseCounter++;
+    return promiseCounter;
   }
   public static void main (String[] args) {
     

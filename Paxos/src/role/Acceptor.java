@@ -16,15 +16,18 @@ public class Acceptor extends PaxosRole{
     this.serverReceivedSeq=receivedSeq;
     this.seqReceived=seq;
     this.serverCommand=command;
-    this.startRole();
   }
   public void startRole(){
     if(serverReceivedSeq.get()<seqReceived){
       //received a larger sequence number
+      System.out.println("Acceptor(id: "+myID+"): sending out promise messages");
       serverReceivedSeq.set(seqReceived);
       Message promiseagree=new PromiseAgreeMessage(myID,serverReceivedSeq.get(),paxosInstance,command);
       Thread t=new Thread(new MessageSendThread(promiseagree,servers.get(0)));
       t.start();
     }
+  }
+  public void startAcceptingPhase(){
+    
   }
 }

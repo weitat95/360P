@@ -57,11 +57,17 @@ public class ServerClientHandler implements Runnable{
       System.out.println("Server received: "+command);
       //Check if you are a leader (for now id smallest be the leader)
       if(server.myID==1){
+        server.commands.add(command);
+        //server.instanceCommandMap.put(server.instanceNum.get(), command);
         System.out.println("Starting proposal with instance:" +server.instanceNum.get()+" seq Num: "+server.sequenceNum.get());
         Proposer proposer=new Proposer(server.myID,server.instanceNum.get(),server.sequenceNum.incrementAndGet(),server.servers);
+        proposer.startProposal();
         server.instanceNum.incrementAndGet();
+        
       }
-//     
+      //Synchronization for the server responding to client
+      //Need to prevent executing twice
+      
       pout.println(executeCommand(command,server.store));
       pout.println("|ENDMSG|");
       pout.flush();

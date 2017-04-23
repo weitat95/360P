@@ -17,5 +17,5 @@ public class PromiseAgreeMessage extends Message{
   public String toString(){
     return "[i="+instance+"]Promise Agree Message from ID: "+myID+" seq: "+seq+" command: "+command;
   }
-
+  
 }

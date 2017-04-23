@@ -11,6 +11,8 @@ import java.util.Scanner;
 import java.util.concurrent.BlockingQueue;
 
 import role.Acceptor;
+import role.Proposer;
+import message.AcceptMessage;
 import message.Message;
 import message.PromiseAgreeMessage;
 import message.ProposeMessage;
@@ -57,12 +59,36 @@ public class MessageReceiveThread implements Runnable{
               System.out.println(pm.toString());
               int seq=pm.getSeq();
               Acceptor acceptor=new Acceptor(server.myID, pm.getInstance(),seq, server.servers,server.receivedSeq,server.command);
-
+              acceptor.startRole();
             }else if(m instanceof PromiseAgreeMessage){
               PromiseAgreeMessage pam=(PromiseAgreeMessage) m;
               System.out.println(pam.toString());
-              //Continue here
-              //debug promiseagreemessage not sending
+              //if(server.instanceNum.get()==pam.getInstance()){
+                if(server.incrementPromise(pam.getInstance())==server.numServer/2+1){
+                  System.out.println("[DEBUG]: Reaches quorum for promises,proceed to phase2");
+                  Proposer p=new Proposer(server.myID,pam.getInstance(),pam.getSeq(),server.servers);
+                  p.sendAccepts(server.commands.removeFirst());
+                }
+              //}
+            }else if(m instanceof AcceptMessage){
+              AcceptMessage am=(AcceptMessage) m;
+              System.out.println(am.toString());
+              String command=am.getCommand();
+              int instance=am.getInstance();
+              int seq=am.getSeq();
+              // This part should be in the learner
+              
+              if(server.instanceCommandMap.get(instance)==null){
+                server.instanceCommandMap.put(instance, command);
+                System.out.println("Accept command: "+command+" instance: "+instance);
+                server.store.executeCommand(command);
+                server.promiseCounter=0;
+              }else if(server.instanceCommandMap.get(instance)==command){
+                System.out.println("do nothing");
+              }else{
+                System.out.println("Server inconsistency?");
+              }
+              
             }
             pout.println("Acknowledge");
             pout.flush();
