@@ -6,3 +6,6 @@ README.md~
 .project
 .settings/
 /bin/
+.tags
+dist/
+src/*/.tags
