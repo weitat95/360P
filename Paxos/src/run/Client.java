@@ -131,8 +131,8 @@ public class Client {
 	  //REMOVE FOR SUBMISSION
 	  Scanner sc = null;
     try {
-      //sc = new Scanner(new FileReader("Paxos/client.cfg"));
-      sc = new Scanner(new FileReader(args[0]));
+      sc = new Scanner(new FileReader("Paxos/client2.cfg"));
+      //sc = new Scanner(new FileReader(args[0]));
     } catch (FileNotFoundException e) {
       e.printStackTrace();
     }

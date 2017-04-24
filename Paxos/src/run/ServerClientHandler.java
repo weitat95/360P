@@ -57,11 +57,11 @@ public class ServerClientHandler implements Runnable{
       String command = cin.nextLine();
       System.out.println("Server received: "+command);
       //Check if you are a leader (for now id smallest be the leader)
-      if(server.myID==1){
+      if(server.myID==server.leaderID){
         server.commands.add(server.myID+":"+command);
         server.commandsProcessing=true;
         int instance=server.instanceNum.addAndGet(1);
-        int seq=server.sequenceNum.incrementAndGet();
+        int seq=server.sequenceNum.incrementAndGet()*server.numServer+server.myID;
         System.out.println("[DEBUG]: Starting proposal with instance:" +instance+" seq Num: "+seq);
         Proposer proposer=new Proposer(server.myID,instance,seq,server.servers);
         proposer.startProposal();
@@ -70,8 +70,12 @@ public class ServerClientHandler implements Runnable{
       }else{
         server.commandsProcessing=true;
         System.out.println("[DEBUG]: Redirecting command to leader");
-        Thread t=new Thread(new MessageSendThread(new RedirectMessage(server.myID+":"+command),server.servers.get(0)));
-        t.start();
+        if(server.crashedServer[server.leaderID-1]==false){//not crashed
+          Thread t=new Thread(new MessageSendThread(new RedirectMessage(server.myID+":"+command),server.servers.get(server.leaderID-1)));
+          t.start();
+        }else{
+          System.out.println("[DEBUG]: Leader Died");
+        }
       }
       try{
         server.rl.lock();

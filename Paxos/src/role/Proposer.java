@@ -1,5 +1,7 @@
 package role;
 
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 
 import run.MessageSendThread;
@@ -18,6 +20,7 @@ public class Proposer extends PaxosRole{
   public void startProposal(){
     System.out.println("[DEBUG]: Starting Prepare State: Sending out prepare messages");
     Message prepare=new ProposeMessage(myID,seq,paxosInstance);
+    saveToDisk((seq));
     for(int i=0;i<servers.size();i++){
       if(i!=myID-1){
         Thread t=new Thread(new MessageSendThread(prepare,servers.get(i)));
@@ -34,5 +37,16 @@ public class Proposer extends PaxosRole{
       t.start();
       }
     }
+  }
+  public void saveToDisk(int str){
+    try{
+      PrintWriter writer =new PrintWriter(myID+"_LastProposalLog.txt","UTF-8");
+      writer.println(str);
+      writer.close();
+    }catch (IOException e){
+      e.printStackTrace();
+    }
+    
+    
   }
 }

@@ -12,6 +12,7 @@ public class Acceptor extends PaxosRole{
   AtomicInteger serverReceivedSeq;
   int seqReceived;
   String serverCommand;
+  Integer leaderID;
   public Acceptor(Integer myID,Integer paxInstance,Integer seq,ArrayList<String> servers,AtomicInteger receivedSeq,String value){
     super(myID,paxInstance,servers);
     this.serverReceivedSeq=receivedSeq;
@@ -29,14 +30,19 @@ public class Acceptor extends PaxosRole{
       System.out.println("[DEBUG]: Acceptor(id: "+myID+"): sending out promise messages");
       serverReceivedSeq.set(seqReceived);
       Message promiseagree=new PromiseAgreeMessage(myID,serverReceivedSeq.get(),paxosInstance,serverCommand);
-      Thread t=new Thread(new MessageSendThread(promiseagree,servers.get(0)));
+      Thread t=new Thread(new MessageSendThread(promiseagree,servers.get(leaderID-1)));
       t.start();
+    }else{
+      
     }
   }
   public void startAcceptingPhase(){
     System.out.println("[DEBUG]: Acceptor(id: "+myID+"): sending to leader telling that we accepted the value");
     AcceptAcceptMessage aam=new AcceptAcceptMessage(myID,seqReceived,paxosInstance,serverCommand);
-    Thread t=new Thread(new MessageSendThread(aam,servers.get(0)));
+    Thread t=new Thread(new MessageSendThread(aam,servers.get(leaderID-1)));
     t.start();
+  }
+  public void setLeader(Integer leaderID){
+    this.leaderID=leaderID;
   }
 }

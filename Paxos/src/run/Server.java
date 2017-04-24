@@ -9,6 +9,7 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.NoSuchElementException;
 import java.util.Queue;
 import java.util.Scanner;
 import java.util.concurrent.BlockingQueue;
@@ -17,13 +18,16 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
+import message.LeaderMessage;
 import message.Message;
+import message.RequestCatchupMessage;
 
 public class Server {
   //String[] ServerIp;
   //int[] ServerPort;
   int myID;
   int numServer;
+  Integer leaderID;
   ArrayList<String> servers;
   Store store;
   AtomicInteger instanceNum;
@@ -32,6 +36,7 @@ public class Server {
   String command;
   //Integer promiseCounter;
   //Integer acceptedCounter;
+  Boolean[] crashedServer; 
   HashMap<Integer,String> instanceCommandMap;
   HashMap<Integer,Integer> promiseCounter;
   HashMap<Integer,Integer> acceptedCounter;
@@ -42,6 +47,7 @@ public class Server {
   public Server(int myID,int numServer,String inventoryPath,ArrayList<String> servers){
     this.myID=myID;
     this.numServer=numServer;
+    this.leaderID=1;
     this.store=new Store(inventoryPath);
     //this.ServerIp=ServerIp;
     //this.ServerPort=ServerPort;
@@ -54,6 +60,10 @@ public class Server {
     this.instanceCommandMap=new HashMap<Integer,String>();
     this.commands=new LinkedList<String>();
     this.commandsProcessing=false;
+    this.crashedServer=new Boolean[numServer];
+    for(int i=0;i<numServer;i++){
+      crashedServer[i]=false;
+    }
   }
   /*
   public synchronized int incrementPromise(Integer instanceNum){
@@ -69,8 +79,8 @@ public class Server {
 
     Scanner sc = null;
     try {
-      //sc = new Scanner(new FileReader("Paxos/server3.cfg"));
-      sc = new Scanner(new FileReader(args[0]));
+      sc = new Scanner(new FileReader("Paxos/server3.cfg"));
+      //sc = new Scanner(new FileReader(args[0]));
 
     } catch (FileNotFoundException e) {
       e.printStackTrace();
@@ -97,7 +107,51 @@ public class Server {
     Server server=new Server(myID,numServer,inventoryPath,servers);
     Thread t=new Thread(new MessageReceiveThread(servers.get(myID-1),server));
     t.start();
-
+    
+    try {
+      Scanner scf = new Scanner(new FileReader(myID+"_LastProposalLog.txt"));
+      //sc = new Scanner(new FileReader(args[0]));
+      System.out.println("[DEBUG]: read previous proposal number");
+      String read=scf.nextLine();
+      server.sequenceNum.set((Integer.parseInt(read)-server.myID)/server.numServer);
+      scf.close();
+    } catch (FileNotFoundException e) {
+      System.out.println("[DEBUG]: No previous proposal");
+    }
+    try {
+      Scanner scff = new Scanner(new FileReader(myID+"_instComm.txt"));
+      //sc = new Scanner(new FileReader(args[0]));
+      System.out.println("[DEBUG]: read previous learned value");
+      
+      while(true){
+        String read=scff.nextLine();
+        String[] tokens=read.split("#");
+        server.instanceCommandMap.put(Integer.parseInt(tokens[1]), tokens[2]);
+        String[] tokens2=tokens[2].split(":");
+        server.store.executeCommand(tokens2[1]);
+      }
+        
+      
+      //server.sequenceNum.set((Integer.parseInt(read)-server.myID)/server.numServer);
+    } catch (FileNotFoundException e) {
+      System.out.println("[DEBUG]: No previous learned value");
+    } catch (NoSuchElementException e){
+      System.out.println("[DEBUG]: Read until last value");
+      //Ask for leader to catch up
+      RequestCatchupMessage rcm=new RequestCatchupMessage(server.myID,server.instanceCommandMap.size());
+      Thread t3=new Thread(new MessageSendThread(rcm,server.servers.get(server.leaderID-1)));
+      t3.start();
+    }
+    
+    if(server.myID==server.leaderID){
+      LeaderMessage lm=new LeaderMessage(server.myID);
+      for(int i=0;i<server.numServer;i++){
+        if(i!=server.myID-1){
+          Thread t2=new Thread(new MessageSendThread(lm,servers.get(i)));
+          t2.start();
+        }
+      }
+    }
     /*
     ServerSocket listener;
     Socket s=null;
