@@ -26,7 +26,7 @@ public class Client {
     this.ServerIp=serverIp;
     this.ServerPort=serverPort;
   }
-  
+
   public void connectServer(){
     for(int i=0;i<numServer;i++){
       server = new Socket();
@@ -44,8 +44,8 @@ public class Client {
           connectedServerID=i;
           break;
         }
-        
-        
+
+
       }catch (SocketTimeoutException ste){
 //        System.out.println("[DEBUG] TIMEOUT Connecting Server: "+(i+1));
         if(i==numServer-1){
@@ -75,8 +75,8 @@ public class Client {
           connectedServerID=i;
           break;
         }
-        
-        
+
+
       }catch (SocketTimeoutException ste){
 //        System.out.println("[DEBUG] TIMEOUT Connecting Server: "+(i+1));
         if(i==numServer-1){
@@ -120,29 +120,30 @@ public class Client {
       connectServer(connectedServerID);
       sendRequest(command);
     }
-   
+
   }
-    
-    
-  
+
+
+
 	public static void main (String[] args) {
 	  //Scanner sc = new Scanner(System.in);
-	  
+
 	  //REMOVE FOR SUBMISSION
 	  Scanner sc = null;
     try {
-      sc = new Scanner(new FileReader("Paxos/client.cfg"));
+      //sc = new Scanner(new FileReader("Paxos/client.cfg"));
+      sc = new Scanner(new FileReader(args[0]));
     } catch (FileNotFoundException e) {
       e.printStackTrace();
     }
     //END
-      
-     
+
+
 		int numServer = sc.nextInt();
 		String[] ServerIp=new String[numServer];
 		int[] ServerPort=new int[numServer];
 		for (int i = 0; i < numServer; i++) {
-		  String str = sc.next(); 
+		  String str = sc.next();
       Scanner token = new Scanner(str);
       token.useDelimiter(":");
       ServerIp[i]=token.next();
@@ -151,8 +152,8 @@ public class Client {
       System.out.println("address for server " + i + ": " + str);
 		}
 		Client client=new Client(numServer,ServerIp,ServerPort);
-		
-		
+
+
 		client.connectServer();
     sc = new Scanner(System.in);
 
@@ -180,13 +181,13 @@ public class Client {
         String userName = tokens[1];
         String toSend="search " + userName;
         client.sendRequest(toSend);
-        
+
       } else if (tokens[0].equals("list")) {
         // TODO: send appropriate command to the server and display the
         // appropriate responses form the server
         String toSend="list";
         client.sendRequest(toSend);
-        
+
       } else {
         System.out.println("ERROR: No such command");
       }

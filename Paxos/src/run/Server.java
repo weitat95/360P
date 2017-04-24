@@ -66,10 +66,12 @@ public class Server {
   }
   */
   public static void main (String[] args) {
-    
+
     Scanner sc = null;
     try {
-      sc = new Scanner(new FileReader("Paxos/server3.cfg"));
+      //sc = new Scanner(new FileReader("Paxos/server3.cfg"));
+      sc = new Scanner(new FileReader(args[0]));
+
     } catch (FileNotFoundException e) {
       e.printStackTrace();
     }
@@ -102,7 +104,7 @@ public class Server {
     try{
       listener=new ServerSocket(ServerPort[myID-1]);
       while(true){
-        
+
         while((s=listener.accept())!=null){
           Scanner scin=new Scanner(s.getInputStream());
           PrintWriter pout=new PrintWriter(s.getOutputStream());
@@ -114,17 +116,17 @@ public class Server {
             Thread clientH = new Thread(new ServerClientHandler(s,server));
             clientH.start();
           }else{
-            
+
           }
         }
       }
     }catch (IOException e){
       e.printStackTrace();
     }
-    
-    
+
+
     //Smallest Server ID be the leader, Starting at 1;
-    
+
     //Leader starts connection to other server;
     BlockingQueue<Message> receiveBuffer=new LinkedBlockingDeque<Message>();
     ArrayList<BlockingQueue<Message>> sendBuffers=new ArrayList<BlockingQueue<Message>>();
@@ -137,7 +139,7 @@ public class Server {
       Thread t=new Thread(new MessageReceiveThread(servers.get(0),receiveBuffer));
       t.start();
     }else{
-      
+
     }
 
     Thread t2=new Thread(new MessageSendThread(sendBuffer,servers.get(0)));
@@ -160,7 +162,7 @@ public class Server {
     }
     */
     // TODO: start server socket to communicate with clients and other servers
-    
+
     // TODO: parse the inventory file
 
     // TODO: handle request from client
