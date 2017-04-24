@@ -5,6 +5,7 @@ import java.net.Socket;
 import java.util.Scanner;
 
 import message.Message;
+import message.RedirectMessage;
 import role.Proposer;
 
 
@@ -57,17 +58,35 @@ public class ServerClientHandler implements Runnable{
       System.out.println("Server received: "+command);
       //Check if you are a leader (for now id smallest be the leader)
       if(server.myID==1){
-        server.commands.add(command);
-        //server.instanceCommandMap.put(server.instanceNum.get(), command);
-        System.out.println("Starting proposal with instance:" +server.instanceNum.get()+" seq Num: "+server.sequenceNum.get());
-        Proposer proposer=new Proposer(server.myID,server.instanceNum.get(),server.sequenceNum.incrementAndGet(),server.servers);
+        server.commands.add(server.myID+":"+command);
+        server.commandsProcessing=true;
+        int instance=server.instanceNum.addAndGet(1);
+        int seq=server.sequenceNum.incrementAndGet();
+        System.out.println("[DEBUG]: Starting proposal with instance:" +instance+" seq Num: "+seq);
+        Proposer proposer=new Proposer(server.myID,instance,seq,server.servers);
         proposer.startProposal();
-        server.instanceNum.incrementAndGet();
         
+        
+      }else{
+        server.commandsProcessing=true;
+        System.out.println("[DEBUG]: Redirecting command to leader");
+        Thread t=new Thread(new MessageSendThread(new RedirectMessage(server.myID+":"+command),server.servers.get(0)));
+        t.start();
+      }
+      try{
+        server.rl.lock();
+        while(server.commandsProcessing){
+          server.paxosFinishExecuting.await();
+        }
+      } catch (InterruptedException e) {
+        // TODO Auto-generated catch block
+        e.printStackTrace();
+      }finally{
+        server.rl.unlock();
       }
       //Synchronization for the server responding to client
       //Need to prevent executing twice
-      
+      pout.println("ab");
       pout.println(executeCommand(command,server.store));
       pout.println("|ENDMSG|");
       pout.flush();

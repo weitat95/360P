@@ -16,21 +16,23 @@ public class Proposer extends PaxosRole{
 
   
   public void startProposal(){
-    System.out.println("Starting Prepare State: Sending out prepare messages");
+    System.out.println("[DEBUG]: Starting Prepare State: Sending out prepare messages");
     Message prepare=new ProposeMessage(myID,seq,paxosInstance);
     for(int i=0;i<servers.size();i++){
-      //if(i!=myID-1){
+      if(i!=myID-1){
         Thread t=new Thread(new MessageSendThread(prepare,servers.get(i)));
         t.start();
-      //}
+      }
     }
   }
   public void sendAccepts(String command){
-    System.out.println("Starting Phase2: Sending out accept! messages");
+    System.out.println("[DEBUG]: Starting Phase2: Sending out accept! messages");
     AcceptMessage am=new AcceptMessage(myID,seq,paxosInstance,command);
     for(int i=0;i<servers.size();i++){
+      if(i!=myID-1){
       Thread t=new Thread(new MessageSendThread(am,servers.get(i)));
       t.start();
+      }
     }
   }
 }

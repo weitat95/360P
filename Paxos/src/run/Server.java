@@ -14,6 +14,8 @@ import java.util.Scanner;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.ReentrantLock;
 
 import message.Message;
 
@@ -28,9 +30,15 @@ public class Server {
   AtomicInteger sequenceNum;
   AtomicInteger receivedSeq;
   String command;
-  Integer promiseCounter;
+  //Integer promiseCounter;
+  //Integer acceptedCounter;
   HashMap<Integer,String> instanceCommandMap;
+  HashMap<Integer,Integer> promiseCounter;
+  HashMap<Integer,Integer> acceptedCounter;
   LinkedList<String> commands;
+  final ReentrantLock rl=new ReentrantLock();
+  final Condition paxosFinishExecuting = rl.newCondition();
+  boolean commandsProcessing;
   public Server(int myID,int numServer,String inventoryPath,ArrayList<String> servers){
     this.myID=myID;
     this.numServer=numServer;
@@ -41,15 +49,22 @@ public class Server {
     this.instanceNum=new AtomicInteger();
     this.sequenceNum=new AtomicInteger();
     this.receivedSeq=new AtomicInteger();
-    this.promiseCounter=0;
+    this.promiseCounter=new HashMap<Integer,Integer>();
+    this.acceptedCounter=new HashMap<Integer,Integer>();
     this.instanceCommandMap=new HashMap<Integer,String>();
     this.commands=new LinkedList<String>();
+    this.commandsProcessing=false;
   }
-  
+  /*
   public synchronized int incrementPromise(Integer instanceNum){
     promiseCounter++;
     return promiseCounter;
   }
+  public synchronized int incrementAccepted(Integer instanceNum){
+    acceptedCounter++;
+    return acceptedCounter;
+  }
+  */
   public static void main (String[] args) {
     
     Scanner sc = null;
