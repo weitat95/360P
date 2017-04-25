@@ -34,6 +34,7 @@ public class Server {
   AtomicInteger sequenceNum;
   AtomicInteger receivedSeq;
   String command;
+  String tempCommand;
   //Integer promiseCounter;
   //Integer acceptedCounter;
   Boolean[] crashedServer; 
@@ -79,7 +80,7 @@ public class Server {
 
     Scanner sc = null;
     try {
-      sc = new Scanner(new FileReader("Paxos/server3.cfg"));
+      sc = new Scanner(new FileReader("Paxos/server1.cfg"));
       //sc = new Scanner(new FileReader(args[0]));
 
     } catch (FileNotFoundException e) {
@@ -111,12 +112,22 @@ public class Server {
     try {
       Scanner scf = new Scanner(new FileReader(myID+"_LastProposalLog.txt"));
       //sc = new Scanner(new FileReader(args[0]));
-      System.out.println("[DEBUG]: read previous proposal number");
+      System.out.println("[DEBUG]: read previous proposal number made");
       String read=scf.nextLine();
       server.sequenceNum.set((Integer.parseInt(read)-server.myID)/server.numServer);
       scf.close();
     } catch (FileNotFoundException e) {
-      System.out.println("[DEBUG]: No previous proposal");
+      System.out.println("[DEBUG]: No previous proposal made");
+    }
+    try {
+      Scanner scf = new Scanner(new FileReader(myID+"_highestSeenProposal.txt"));
+      //sc = new Scanner(new FileReader(args[0]));
+      System.out.println("[DEBUG]: read previous seen proposal(sequence)");
+      String read=scf.nextLine();
+      server.receivedSeq.set(Integer.parseInt(read));
+      scf.close();
+    } catch (FileNotFoundException e) {
+      System.out.println("[DEBUG]: No previous seen proposal");
     }
     try {
       Scanner scff = new Scanner(new FileReader(myID+"_instComm.txt"));
@@ -130,7 +141,7 @@ public class Server {
         String[] tokens2=tokens[2].split(":");
         server.store.executeCommand(tokens2[1]);
       }
-        
+      
       
       //server.sequenceNum.set((Integer.parseInt(read)-server.myID)/server.numServer);
     } catch (FileNotFoundException e) {
@@ -138,16 +149,22 @@ public class Server {
     } catch (NoSuchElementException e){
       System.out.println("[DEBUG]: Read until last value");
       //Ask for leader to catch up
+      
       RequestCatchupMessage rcm=new RequestCatchupMessage(server.myID,server.instanceCommandMap.size());
-      Thread t3=new Thread(new MessageSendThread(rcm,server.servers.get(server.leaderID-1)));
-      t3.start();
+      for(int i=0;i<server.numServer;i++){
+        if(i!=server.myID-1){
+          Thread t3=new Thread(new MessageSendThread(rcm,server.servers.get(i),server));
+          t3.start();
+        }
+      }
+      
     }
     
     if(server.myID==server.leaderID){
       LeaderMessage lm=new LeaderMessage(server.myID);
       for(int i=0;i<server.numServer;i++){
         if(i!=server.myID-1){
-          Thread t2=new Thread(new MessageSendThread(lm,servers.get(i)));
+          Thread t2=new Thread(new MessageSendThread(lm,servers.get(i),server));
           t2.start();
         }
       }

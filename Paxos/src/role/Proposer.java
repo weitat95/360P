@@ -5,12 +5,14 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 
 import run.MessageSendThread;
+import run.Server;
 import message.AcceptMessage;
 import message.Message;
 import message.ProposeMessage;
 
 public class Proposer extends PaxosRole{
   int seq;
+  Server server;
   public Proposer(Integer myID,Integer paxInstance,Integer seq,ArrayList<String> servers){
     super(myID,paxInstance,servers);
     this.seq=seq;
@@ -23,7 +25,7 @@ public class Proposer extends PaxosRole{
     saveToDisk((seq));
     for(int i=0;i<servers.size();i++){
       if(i!=myID-1){
-        Thread t=new Thread(new MessageSendThread(prepare,servers.get(i)));
+        Thread t=new Thread(new MessageSendThread(prepare,servers.get(i),server));
         t.start();
       }
     }
@@ -33,7 +35,7 @@ public class Proposer extends PaxosRole{
     AcceptMessage am=new AcceptMessage(myID,seq,paxosInstance,command);
     for(int i=0;i<servers.size();i++){
       if(i!=myID-1){
-      Thread t=new Thread(new MessageSendThread(am,servers.get(i)));
+      Thread t=new Thread(new MessageSendThread(am,servers.get(i),server));
       t.start();
       }
     }
@@ -48,5 +50,8 @@ public class Proposer extends PaxosRole{
     }
     
     
+  }
+  public void setServer(Server server){
+    this.server=server;
   }
 }

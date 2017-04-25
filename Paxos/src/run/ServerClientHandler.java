@@ -64,6 +64,7 @@ public class ServerClientHandler implements Runnable{
         int seq=server.sequenceNum.incrementAndGet()*server.numServer+server.myID;
         System.out.println("[DEBUG]: Starting proposal with instance:" +instance+" seq Num: "+seq);
         Proposer proposer=new Proposer(server.myID,instance,seq,server.servers);
+        proposer.setServer(server);
         proposer.startProposal();
         
         
@@ -71,7 +72,8 @@ public class ServerClientHandler implements Runnable{
         server.commandsProcessing=true;
         System.out.println("[DEBUG]: Redirecting command to leader");
         if(server.crashedServer[server.leaderID-1]==false){//not crashed
-          Thread t=new Thread(new MessageSendThread(new RedirectMessage(server.myID+":"+command),server.servers.get(server.leaderID-1)));
+          Thread t=new Thread(new MessageSendThread(new RedirectMessage(server.myID+":"+command),server.servers.get(server.leaderID-1),server));
+          server.tempCommand=server.myID+":"+command;
           t.start();
         }else{
           System.out.println("[DEBUG]: Leader Died");
@@ -80,6 +82,7 @@ public class ServerClientHandler implements Runnable{
       try{
         server.rl.lock();
         while(server.commandsProcessing){
+          System.out.println("######:"+server.commandsProcessing);
           server.paxosFinishExecuting.await();
         }
       } catch (InterruptedException e) {

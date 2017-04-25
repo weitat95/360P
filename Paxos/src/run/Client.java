@@ -106,7 +106,7 @@ public class Client {
       while(!(msg=din.nextLine()).equals("|ENDMSG|")){
         System.out.println(msg); // prints server's message
       }
-    } catch(SocketTimeoutException ste ){
+   // } catch(SocketTimeoutException ste ){
 //      System.out.println("[DEBUG] TIMEOUT sending Request to Server");
 
     }catch (IOException e) {
