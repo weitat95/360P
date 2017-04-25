@@ -53,7 +53,7 @@ public class MessageSendThread implements Runnable{
         //index=myID-1
         int idOFCrashedNode=server.servers.indexOf(serverIP);
         server.crashedServer[idOFCrashedNode]=true;
-        System.out.println("$$DEBUG: server (ID: "+(idOFCrashedNode+1)+") Crashed");
+        //System.out.println("$$DEBUG: server (ID: "+(idOFCrashedNode+1)+") Crashed");
         if(idOFCrashedNode+1==server.leaderID){
           if(server.leaderID+1==server.myID){
         

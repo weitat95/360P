@@ -82,7 +82,7 @@ public class ServerClientHandler implements Runnable{
       try{
         server.rl.lock();
         while(server.commandsProcessing){
-          System.out.println("######:"+server.commandsProcessing);
+          //System.out.println("######:"+server.commandsProcessing);
           server.paxosFinishExecuting.await();
         }
       } catch (InterruptedException e) {

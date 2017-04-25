@@ -80,7 +80,7 @@ public class Server {
 
     Scanner sc = null;
     try {
-      sc = new Scanner(new FileReader("Paxos/server1.cfg"));
+      sc = new Scanner(new FileReader("Paxos/server2.cfg"));
       //sc = new Scanner(new FileReader(args[0]));
 
     } catch (FileNotFoundException e) {

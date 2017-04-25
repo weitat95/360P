@@ -29,7 +29,7 @@ public class Acceptor extends PaxosRole{
     this.serverCommand=value;
   }
   public void startRole(){
-    System.out.println("##[DEBUG]: "+serverReceivedSeq.get()+"should be less than"+seqReceived);
+    //System.out.println("##[DEBUG]: "+serverReceivedSeq.get()+"should be less than"+seqReceived);
     //if(serverReceivedSeq.get()<seqReceived){
       //received a larger sequence number
       System.out.println("[DEBUG]: Acceptor(id: "+myID+"): sending out promise messages");
